@@ -1,0 +1,52 @@
+[2025-07-07 16:52:32] APP_START: Backup créé: backups/simulIA_btp_20250707_165232.db
+[2025-07-07 16:52:47] APP_START: Backup créé: backups/simulIA_btp_20250707_165247.db
+[2025-07-07 16:53:28] APP_START: Backup créé: backups/simulIA_btp_20250707_165328.db
+[2025-07-07 16:54:58] APP_START: Backup créé: backups/simulIA_btp_20250707_165458.db
+[2025-07-10 10:29:10] APP_START: Backup créé: backups/simulIA_btp_20250710_102910.db
+[2025-07-10 10:29:34] APP_START: Backup créé: backups/simulIA_btp_20250710_102934.db
+[2025-07-10 10:29:40] APP_START: Backup créé: backups/simulIA_btp_20250710_102940.db
+[2025-07-10 10:30:30] APP_START: Backup créé: backups/simulIA_btp_20250710_103030.db
+[2025-07-10 10:30:48] APP_START: Backup créé: backups/simulIA_btp_20250710_103048.db
+[2025-07-10 10:31:21] APP_START: Backup créé: backups/simulIA_btp_20250710_103121.db
+[2025-07-10 10:31:30] APP_START: Backup créé: backups/simulIA_btp_20250710_103130.db
+[2025-07-10 10:31:46] APP_START: Backup créé: backups/simulIA_btp_20250710_103146.db
+[2025-07-10 10:31:55] APP_START: Backup créé: backups/simulIA_btp_20250710_103155.db
+[2025-07-10 10:31:55] APP_START: Backup créé: backups/simulIA_btp_20250710_103155.db
+[2025-07-10 12:31:38] APP_START: Backup créé: backups/simulIA_btp_20250710_123138.db
+[2025-07-10 12:38:14] APP_START: Backup créé: backups/simulIA_btp_20250710_123814.db
+[2025-07-10 12:44:46] APP_START: Backup créé: backups/simulIA_btp_20250710_124446.db
+[2025-07-10 14:12:56] APP_START: Backup créé: backups/simulIA_btp_20250710_141256.db
+[2025-07-10 14:13:08] APP_START: Backup créé: backups/simulIA_btp_20250710_141308.db
+[2025-07-10 14:13:08] APP_START: Backup créé: backups/simulIA_btp_20250710_141308.db
+[2025-07-10 14:13:11] BUG_REPORT: test
+
+[2025-07-10 14:13:39] APP_START: Backup créé: backups/simulIA_btp_20250710_141339.db
+[2025-07-10 14:13:39] APP_START: Backup créé: backups/simulIA_btp_20250710_141339.db
+[2025-07-10 14:13:42] BUG_REPORT: parfait
+[2025-07-19 11:18:11] APP_START: Backup créé: backups/simulIA_btp_20250719_111811.db
+[2025-07-19 11:23:25] APP_START: Backup créé: backups/simulIA_btp_20250719_112325.db
+[2025-07-19 11:33:09] APP_START: Backup créé: backups/simulIA_btp_20250719_113309.db
+[2025-07-19 11:33:12] AJOUT_FOURNISSEUR: acier1 - acier
+[2025-10-17 11:14:58] APP_START: Backup créé: backups/simulIA_btp_20251017_111458.db
+[2025-10-17 11:17:03] APP_START: Backup créé: backups/simulIA_btp_20251017_111703.db
+[2025-10-17 11:17:04] APP_START: Backup créé: backups/simulIA_btp_20251017_111704.db
+[2025-10-17 11:17:05] APP_START: Backup créé: backups/simulIA_btp_20251017_111704.db
+[2025-10-17 11:17:15] APP_START: Backup créé: backups/simulIA_btp_20251017_111715.db
+[2025-10-17 11:17:15] APP_START: Backup créé: backups/simulIA_btp_20251017_111715.db
+[2025-10-17 11:17:18] BUG_REPORT: bonjour
+[2025-10-17 11:50:21] APP_START: Backup créé: backups/simulIA_btp_20251017_115021.db
+[2025-10-17 11:50:24] AJOUT_FOURNISSEUR: BTP - acier
+[2025-10-18 15:24:21] APP_START: Backup créé: backups/simulIA_btp_20251018_152421.db
+[2025-10-19 21:11:43] APP_START: Backup créé: backups/simulIA_btp_20251019_211143.db
+[2025-10-19 21:13:29] APP_START: Backup créé: backups/simulIA_btp_20251019_211329.db
+[2025-11-14 10:44:52] APP_START: Backup créé: backups/simulIA_btp_20251114_104452.db
+[2025-11-14 10:46:12] APP_START: Backup créé: backups/simulIA_btp_20251114_104612.db
+[2025-11-14 10:46:13] APP_START: Backup créé: backups/simulIA_btp_20251114_104613.db
+[2025-11-14 10:46:15] BUG_REPORT: Bonjour, 
+j'ai un problème 
+[2025-11-14 10:46:57] APP_START: Backup créé: backups/simulIA_btp_20251114_104657.db
+[2025-11-14 10:47:22] APP_START: Backup créé: backups/simulIA_btp_20251114_104722.db
+[2025-11-14 10:47:24] APP_START: Backup créé: backups/simulIA_btp_20251114_104724.db
+[2025-11-14 10:55:14] APP_START: Backup créé: backups/simulIA_btp_20251114_105514.db
+[2025-11-14 11:03:39] APP_START: Backup créé: backups/simulIA_btp_20251114_110339.db
+[2025-12-22 20:24:59] APP_START: Backup créé: backups/simulIA_btp_20251222_202459.db

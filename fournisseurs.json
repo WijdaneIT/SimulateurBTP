@@ -1,0 +1,34 @@
+[
+    {
+        "nom": "BoisExpress",
+        "materiau": "bois",
+        "prix_unitaire": 85,
+        "qualite": 8,
+        "delai": 3,
+        "fiabilite": 0.9
+    },
+    {
+        "nom": "CimentRapide",
+        "materiau": "ciment",
+        "prix_unitaire": 70,
+        "qualite": 6,
+        "delai": 5,
+        "fiabilite": 0.85
+    },
+    {
+        "nom": "AcierPremium",
+        "materiau": "acier",
+        "prix_unitaire": 120,
+        "qualite": 9,
+        "delai": 7,
+        "fiabilite": 0.95
+    },
+    {
+        "nom": "MateriauxEco",
+        "materiau": "bois",
+        "prix_unitaire": 60,
+        "qualite": 4,
+        "delai": 10,
+        "fiabilite": 0.75
+    }
+]
