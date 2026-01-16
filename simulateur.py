@@ -27,11 +27,11 @@ st.set_page_config(
 )
 
 # Configuration des chemins
-DB_PATH = os.path.join(os.getcwd(), "simullA_btp.db") # Utilise le nom exact du fichier vu sur l'image
+DB_PATH = os.path.join(os.getcwd(), "simullA_btp.db")
 BACKUP_DIR = "backups/"
 Path(BACKUP_DIR).mkdir(exist_ok=True)
 
-# Configuration SMTP (à stocker dans les secrets Streamlit)
+# Configuration SMTP (Gardé tel quel pour tes e-mails)
 SMTP_CONFIG = {
     "server": st.secrets.get("SMTP_SERVER", "smtp.gmail.com"),
     "port": st.secrets.get("SMTP_PORT", 587),
@@ -55,26 +55,32 @@ def backup_database():
 
 def show_splash_screen():
     """Affiche l'écran d'accueil"""
-    splash = st.empty()
-    with splash.container():
-        st.title("SimulIA BTP")
-        st.subheader("by Wijdane and Alaa")
-        if os.path.exists("logo.png"):
-            logo = Image.open("logo.png")
-            st.image(logo, use_column_width=True)
-        st.info("Chargement de l'intelligence d'Achat...")
-        progress_bar = st.progress(0)
-        for i in range(100):
-            time.sleep(0.02)
-            progress_bar.progress(i + 1)
-    time.sleep(0.5)
-    splash.empty()
+    # Ajout d'une condition pour ne pas le réafficher à chaque clic
+    if "splash_shown" not in st.session_state:
+        splash = st.empty()
+        with splash.container():
+            st.title("SimulIA BTP")
+            st.subheader("by Wijdane and Alaa")
+            if os.path.exists("logo.png"):
+                logo = Image.open("logo.png")
+                st.image(logo, use_column_width=True)
+            st.info("Chargement de l'intelligence d'Achat...")
+            progress_bar = st.progress(0)
+            for i in range(100):
+                time.sleep(0.01) # Accéléré légèrement pour le confort
+                progress_bar.progress(i + 1)
+        time.sleep(0.5)
+        splash.empty()
+        st.session_state["splash_shown"] = True
 
 def log_action(action, details=""):
     """Journalise les actions utilisateur"""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open("activity_log.txt", "a") as f:
-        f.write(f"[{timestamp}] {action}: {details}\n")
+    try:
+        with open("activity_log.txt", "a") as f:
+            f.write(f"[{timestamp}] {action}: {details}\n")
+    except:
+        pass
 
 def send_email(subject, body):
     """Envoie un email via SMTP"""
@@ -109,7 +115,7 @@ class BTPDatabase:
     def _create_tables(self):
         cursor = self.conn.cursor()
 
-        # Créer les tables si nécessaire (do this first)
+        # Créer les tables si nécessaire
         cursor.execute('''CREATE TABLE IF NOT EXISTS fournisseurs (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             nom TEXT NOT NULL,
@@ -142,7 +148,7 @@ class BTPDatabase:
                             resultat_reel REAL,
                             date_feedback DATE DEFAULT CURRENT_DATE)''')
 
-        # Vérifier et ajouter les colonnes manquantes (après création)
+        # Vérifier et ajouter les colonnes manquantes (migration)
         cursor.execute("PRAGMA table_info(fournisseurs)")
         columns = [col[1] for col in cursor.fetchall()]
 
@@ -155,13 +161,16 @@ class BTPDatabase:
 
         for col_name, col_type, default_val in new_columns:
             if col_name not in columns:
-                cursor.execute(f"ALTER TABLE fournisseurs ADD COLUMN {col_name} {col_type} DEFAULT {default_val}")
+                try:
+                    cursor.execute(f"ALTER TABLE fournisseurs ADD COLUMN {col_name} {col_type} DEFAULT {default_val}")
+                except:
+                    pass
 
         self.conn.commit()
 
-    @st.cache_data(ttl=300)
-    def get_fournisseurs(_self):
-        return pd.read_sql_query("SELECT * FROM fournisseurs", _self.conn)
+    # Retrait du cache ici pour éviter les erreurs de thread, on gère le cache plus haut si besoin
+    def get_fournisseurs(self):
+        return pd.read_sql_query("SELECT * FROM fournisseurs", self.conn)
 
     def add_fournisseur(self, fournisseur):
         cursor = self.conn.cursor()
@@ -199,18 +208,17 @@ class BTPDatabase:
 class IAEngine:
     def __init__(self, db):
         self.db = db
+        # Initialisation par défaut pour éviter le crash si pas de fichier
+        self.cout_model = GradientBoostingRegressor(n_estimators=50, random_state=42)
+        self.delai_model = GradientBoostingRegressor(n_estimators=50, random_state=42)
         self.load_models()
 
     def load_models(self):
-        # On initialise d'abord des modèles par défaut
-        self.cout_model = GradientBoostingRegressor(n_estimators=50, random_state=42)
-        self.delai_model = GradientBoostingRegressor(n_estimators=50, random_state=42)
-        
-        # On essaie de charger les modèles sauvegardés
+        # On essaie de charger les modèles sauvegardés avec sécurité
         if os.path.exists("model_cout_cache.pkl"):
             try:
                 self.cout_model = joblib.load("model_cout_cache.pkl")
-            except: pass # On garde le modèle par défaut si le chargement échoue
+            except: pass 
         
         if os.path.exists("model_delai.pkl"):
             try:
@@ -218,28 +226,34 @@ class IAEngine:
             except: pass
 
     def save_models(self):
-        joblib.dump(self.cout_model, "model_cout_cache.pkl")
-        joblib.dump(self.delai_model, "model_delai.pkl")
+        try:
+            joblib.dump(self.cout_model, "model_cout_cache.pkl")
+            joblib.dump(self.delai_model, "model_delai.pkl")
+        except: pass
 
-    # Ne pas cache l'entraînement (il modifie l'état)
     def train_models(self):
-        df = pd.read_sql_query('''SELECT f.prix_unitaire, f.qualite, f.delai, f.fiabilite, 
-                                         h.cout_reel, h.delai_reel 
-                                  FROM historique_decisions h
-                                  JOIN fournisseurs f ON h.id_fournisseur = f.id 
-                                  WHERE h.cout_reel IS NOT NULL AND h.delai_reel IS NOT NULL''', self.db.conn)
-        if len(df) > 10:
-            X = df[['prix_unitaire', 'qualite', 'delai', 'fiabilite']]
-            y_cout = df['cout_reel'] - df['prix_unitaire']
-            y_delai = df['delai_reel']
-            self.cout_model.fit(X, y_cout)
-            self.delai_model.fit(X, y_delai)
-            self.save_models()
+        try:
+            df = pd.read_sql_query('''SELECT f.prix_unitaire, f.qualite, f.delai, f.fiabilite, 
+                                             h.cout_reel, h.delai_reel 
+                                      FROM historique_decisions h
+                                      JOIN fournisseurs f ON h.id_fournisseur = f.id 
+                                      WHERE h.cout_reel IS NOT NULL AND h.delai_reel IS NOT NULL''', self.db.conn)
+            if len(df) > 5: # Seuil réduit pour faciliter le premier entraînement
+                X = df[['prix_unitaire', 'qualite', 'delai', 'fiabilite']]
+                y_cout = df['cout_reel'] - df['prix_unitaire']
+                y_delai = df['delai_reel']
+                self.cout_model.fit(X, y_cout)
+                self.delai_model.fit(X, y_delai)
+                self.save_models()
+        except Exception as e:
+            # On ignore silencieusement l'erreur d'entrainement pour ne pas bloquer l'app
+            pass
 
     def predict_cout_cache(self, features):
         try:
             return self.cout_model.predict([features])[0]
         except:
+            # Fallback manuel si le modèle n'est pas prêt
             prix, qualite, delai, fiabilite = features
             cout_cache = 0
             if qualite < 5:
@@ -287,7 +301,8 @@ def show_database_management(db):
                     f.write(uploaded_db.getvalue())
                 st.success("Base de données importée avec succès!")
                 log_action("IMPORT_DB", uploaded_db.name)
-                st.experimental_rerun()
+                # CORRECTION 1 : Remplacement de experimental_rerun par rerun
+                st.rerun()
 
         st.write("**Exporter les données**")
 
@@ -336,21 +351,18 @@ def show_tutorial():
         tabs = st.tabs(["1. Import initial", "2. Ajouter fournisseurs", "3. Simuler un achat"])
         with tabs[0]:
             st.write("""
-            **Étape 1: Import initial**  
-            - Utilisez l'outil d'import dans 'Gestion de la base'  
+            **Étape 1: Import initial** - Utilisez l'outil d'import dans 'Gestion de la base'  
             - Chargez un fichier .db existant ou commencez avec une base vide
             """)
         with tabs[1]:
             st.write("""
-            **Étape 2: Ajouter des fournisseurs**  
-            - Allez dans l'onglet 'Configuration'  
+            **Étape 2: Ajouter des fournisseurs** - Allez dans l'onglet 'Configuration'  
             - Remplissez le formulaire 'Ajouter un fournisseur'  
             - Complétez les critères avancés si nécessaire
             """)
         with tabs[2]:
             st.write("""
-            **Étape 3: Simuler un achat**  
-            - Naviguez vers l'onglet 'Simulation'  
+            **Étape 3: Simuler un achat** - Naviguez vers l'onglet 'Simulation'  
             - Sélectionnez votre matériau et critères  
             - Analysez les recommandations de l'IA
             """)
@@ -360,7 +372,8 @@ def show_tutorial():
 # FONCTIONS DE CALCUL
 # ---------------------------
 @st.cache_data
-def appliquer_surcharges_ia(df, _ia_engine):  # Correction du paramètre ici
+def appliquer_surcharges_ia(df, _ia_engine):
+    # L'underscore devant _ia_engine dit à streamlit d'ignorer cet argument pour le cache
     df = df.copy()
     for col in ['durabilite', 'freq_entretien', 'recyclabilite', 'co2_unitaire']:
         if col not in df.columns:
@@ -377,8 +390,9 @@ def appliquer_surcharges_ia(df, _ia_engine):  # Correction du paramètre ici
 
     for idx, row in df.iterrows():
         features = [row['prix_unitaire'], row['qualite'], row['delai'], row['fiabilite']]
-        df.at[idx, "cout_cache"] = _ia_engine.predict_cout_cache(features)  # Utilisation correcte
-        df.at[idx, "delai_estime"] = _ia_engine.predict_delai_reel(features)  # Utilisation correcte
+        # Appel sécurisé à la prédiction
+        df.at[idx, "cout_cache"] = _ia_engine.predict_cout_cache(features)
+        df.at[idx, "delai_estime"] = _ia_engine.predict_delai_reel(features)
 
     df["prix_total"] = df["prix_unitaire"] + df["cout_cache"]
     return df
@@ -462,7 +476,8 @@ def configuration_tab(db, df):
                 }
                 db.add_fournisseur(fournisseur)
                 st.success(f"Fournisseur {nom} ajouté avec succès!")
-                st.experimental_rerun()
+                # CORRECTION 2 : Remplacement de experimental_rerun par rerun
+                st.rerun()
 
     with col2:
         st.subheader("Liste des fournisseurs")
@@ -478,7 +493,7 @@ def configuration_tab(db, df):
         else:
             st.info("Aucun fournisseur enregistré")
 
-def simulation_tab(db, ia_engine, df):  # Correction du paramètre ici
+def simulation_tab(db, ia_engine, df):
     """Onglet de simulation d'achat"""
     st.header("📊 Simulation d'achat")
 
@@ -489,7 +504,12 @@ def simulation_tab(db, ia_engine, df):  # Correction du paramètre ici
         with col1:
             st.subheader("Mon achat")
             materiau = st.selectbox("Matériau requis*", df["materiau"].unique())
-            default_budget = float(df[df["materiau"]==materiau]["prix_unitaire"].max() * 1.2) if not df[df["materiau"]==materiau].empty else 100.0
+            
+            # Correction mineure pour éviter erreur si df vide
+            default_budget = 100.0
+            if not df[df["materiau"]==materiau].empty:
+                default_budget = float(df[df["materiau"]==materiau]["prix_unitaire"].max() * 1.2)
+                
             budget_max = st.number_input("Budget maximum (€)*", min_value=0.0,
                                        value=default_budget,
                                        step=100.0)
@@ -511,7 +531,10 @@ def simulation_tab(db, ia_engine, df):  # Correction du paramètre ici
 
     # Traitement des données
     start_time = time.time()
-    df_ia = appliquer_surcharges_ia(df, ia_engine)  # Utilisation correcte
+    
+    # Appel de la fonction cache
+    df_ia = appliquer_surcharges_ia(df, ia_engine)
+    
     df_scores = calculer_scores(df_ia, poids)
     df_filtre = df_scores[(df_scores["materiau"] == materiau) &
                          (df_scores["prix_total"] <= budget_max) &
@@ -530,7 +553,10 @@ def simulation_tab(db, ia_engine, df):  # Correction du paramètre ici
     col1, col2, col3 = st.columns(3)
     col1.metric("Fournisseur recommandé", meilleur["nom"])
     col2.metric("Prix total estimé", f"{meilleur['prix_total']:.2f}€")
-    risk_pct = (meilleur['cout_cache']/meilleur['prix_unitaire']*100) if meilleur['prix_unitaire'] else 0.0
+    
+    risk_pct = 0.0
+    if meilleur['prix_unitaire'] > 0:
+        risk_pct = (meilleur['cout_cache']/meilleur['prix_unitaire']*100)
     col3.metric("Risque total", f"{risk_pct:.1f}%")
 
     # Tableau comparatif
@@ -591,15 +617,14 @@ def main():
     db = BTPDatabase()
     ia_engine = IAEngine(db)
 
-    # Chargement données avec cache
-    with st.spinner("Chargement des données..."):
-        df = db.get_fournisseurs()
+    # Chargement données
+    df = db.get_fournisseurs()
 
-    # Entraînement IA
+    # Entraînement IA (non bloquant)
     with st.spinner("Optimisation de l'intelligence d'Achat..."):
         ia_engine.train_models()
 
-    # Sidebar (passer db)
+    # Sidebar
     show_database_management(db)
     show_help_contacts()
 
@@ -614,7 +639,7 @@ def main():
 
     with tab2:
         if not df.empty:
-            simulation_tab(db, ia_engine, df)  # Correction ici
+            simulation_tab(db, ia_engine, df)
         else:
             st.warning("Ajoutez d'abord des fournisseurs dans l'onglet Configuration")
 
